@@ -399,35 +399,43 @@ class NpzDatasetPartition:
     if num_configs < min_configs:
       print('skipping graph with only %i configurations' % num_configs)
       return
+    
+
     reading_config = 0
     while reading_config < n_runtimes:
       st = reading_config
       ed = min(n_runtimes, reading_config + config_size)
-      num_configs = ed - st + 1
+      num_configs = ed - st
+
+      # set graph features
+      for key, ndarray in npz_data.items():
+        self._data_dict[key].append(ndarray)
+      self._data_dict['node_config_feat'] = []
+      self._data_dict['config_runtime'] = []
+      self._data_dict['argsort_config_runtime'] = []
+
       self._data_dict['node_config_feat'].append(npz_data['node_config_feat'][st:ed].reshape(
           (num_configs * num_config_nodes, -1)))
       self._data_dict['config_runtime'].append(npz_data['config_runtime'][st:ed])
       self._data_dict['argsort_config_runtime'].append(npz_data['argsort_config_runtime'][st:ed])
       self._data_dict['graph_id'].append(np.array(graph_id))
+
       num_nodes = npz_data['node_feat'].shape[0]
       num_edges = npz_data['edge_index'].shape[0]
-      assert num_config_nodes == npz_data['node_config_ids'].shape[0]
-      assert num_nodes == npz_data['node_opcode'].shape[0]
-      assert num_configs == npz_data['config_runtime'].shape[0]
       self._num_nodes.append(num_nodes)
       self._num_config_nodes.append(num_config_nodes)
       self._num_node_splits.append(npz_data['node_splits'].shape[0])
       self._num_edges.append(num_edges)
       self._num_configs.append(num_configs)
-      print(f"[dataset info] graph id: {graph_id}, "
-          + f"config index: {st} -> {ed}"
-          + f"num_nodes: {num_nodes}"
-          + f"num_config_nodes: {num_config_nodes}"
-          + f"num_node_splits: {npz_data['node_splits'].shape[0]}"
-          + f"num_edges: {num_edges}"
-          + f"num_configs: {num_configs}")
+      print(f"[dataset info] graph id: {graph_id}, \n"
+          + f"config index: {st} -> {ed} \n"
+          + f"num_nodes: {num_nodes} \n"
+          + f"num_config_nodes: {num_config_nodes} \n"
+          + f"num_node_splits: {npz_data['node_splits'].shape[0]} \n"
+          + f"num_edges: {num_edges} \n"
+          + f"num_configs: {num_configs} \n")
       reading_config += config_size
-      yield f"${st}_{ed}"
+      yield f"{st}_{ed}"
       self.clear()
 
 
@@ -643,9 +651,8 @@ def save_npz_split_by_graph(
       iter_npz = _graph_npz.add_npz_file_by_configs(
           graph_id, np_data, config_size = max_configs, min_configs=min_configs)
       for config_range in iter_npz:
-          print(f"np_dataset size: {len(_graph_npz._data_dict)}")
-          filename = f'{split_path}:{min_configs}:{max_configs}:{config_range}'
-          cache_filename = os.path.join(cache_dir, f'{filename}.npz')
+          filename = f'{graph_id}_{min_configs}_{max_configs}_{config_range}.npz'
+          cache_filename = os.path.join(cache_dir, f'{filename}')
 
           _graph_npz.finalize()
           _graph_npz.save_to_file(cache_filename)

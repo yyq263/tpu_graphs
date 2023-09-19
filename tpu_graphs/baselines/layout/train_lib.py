@@ -99,10 +99,10 @@ def train(args: train_args.TrainArgs):
   cache_dir = os.path.expanduser(_CACHE_DIR.value)
 
   # save data to local
-  if not os.path.exists(cached_flag):
-    for data_type in ('train', 'valid', 'test'):
+  for data_type in ('train', 'valid', 'test'):
+    cached_flag = os.path.join(cache_dir, data_type, '_SUCCESS')
+    if not os.path.exists(cached_flag):
       print(f'caching {data_type} dataset')
-      cached_flag = os.path.join(cache_dir, data_type, '_SUCCESS')
       data.save_npz_split_by_graph(os.path.join(data_root_dir, data_type),
                                    min_configs=num_configs,
                                    max_configs=args.max_configs,
