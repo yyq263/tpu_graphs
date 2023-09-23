@@ -427,13 +427,13 @@ class NpzDatasetPartition:
       self._num_node_splits.append(npz_data['node_splits'].shape[0])
       self._num_edges.append(num_edges)
       self._num_configs.append(num_configs)
-      print(f"[dataset info] graph id: {graph_id}, \n"
-          + f"config index: {st} -> {ed} \n"
-          + f"num_nodes: {num_nodes} \n"
-          + f"num_config_nodes: {num_config_nodes} \n"
-          + f"num_node_splits: {npz_data['node_splits'].shape[0]} \n"
-          + f"num_edges: {num_edges} \n"
-          + f"num_configs: {num_configs} \n")
+      print(f"[dataset info] graph id: {graph_id}, "
+          + f"config index: {st} -> {ed}, "
+          + f"num_nodes: {num_nodes}, "
+          + f"num_config_nodes: {num_config_nodes}, "
+          + f"num_node_splits: {npz_data['node_splits'].shape[0]}, "
+          + f"num_edges: {num_edges}, "
+          + f"num_configs: {num_configs}")
       reading_config += config_size
       yield f"{st}_{ed}"
       self.clear()

@@ -26,7 +26,6 @@ pip install  tensorflow_gnn --pre
 pip install tensorflow-ranking
 conda clean --all -y
 
-python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
 
 git clone https://github.com/yyq263/tpu_graphs.git
 
@@ -38,10 +37,7 @@ python3 echo_download_commands.py | bash
 add-apt-repository -y ppa:ubuntu-toolchain-r/test
 apt-get update -y
 apt-get install --only-upgrade libstdc++6 -y
-
-# apt-get install libcublas-12-0 -y
 apt-get install vim -y
-
 
 pip install kaggle
 mkdir ~/.kaggle
@@ -49,3 +45,4 @@ echo "{\"username\":\"yyq263\",\"key\":\"5ab15f2cde2b024a1a11ac99ff218cd9\"}" > 
 
 CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDNN_PATH/lib:$CONDA_PREFIX/lib/
+python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"

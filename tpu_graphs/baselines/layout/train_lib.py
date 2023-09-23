@@ -125,8 +125,6 @@ def train(args: train_args.TrainArgs):
           .map(tfgnn.GraphTensor.merge_batch_to_components)
           .map(_graph_and_label))
 
-  test_split = data.get_npz_split(os.path.join(cache_dir, 'test'))
-
   model = models.ResModel(num_configs)
 
   loss = tfr.keras.losses.ListMLELoss()  # (temperature=10)
@@ -169,51 +167,53 @@ def train(args: train_args.TrainArgs):
                    i, best_val_at_epoch)
       break
 
-  # Restore best parameters.
-  assert best_params is not None
-  for v in model.trainable_variables:
-    v.assign(best_params[v.ref])
 
-  print('\n\n   Running inference on test set ...\n\n')
-  test_rankings = []
+  # test_split = data.get_npz_split(os.path.join(cache_dir, 'test'))
+  # # Restore best parameters.
+  # assert best_params is not None
+  # for v in model.trainable_variables:
+  #   v.assign(best_params[v.ref])
 
-  for graph in tqdm.tqdm(test_split.iter_graph_tensors(),
-                         total=test_split.graph_id.shape[-1],
-                         desc='Inference'):
-    num_configs = graph.node_sets['g']['runtimes'].shape[-1]
-    all_scores = []
-    for i in range(0, num_configs, _INFERENCE_CONFIGS_BATCH_SIZE):
-      end_i = min(i + _INFERENCE_CONFIGS_BATCH_SIZE, num_configs)
-      # Take a cut of the configs.
-      node_set_g = graph.node_sets['g']
-      subconfigs_graph = tfgnn.GraphTensor.from_pieces(
-          edge_sets=graph.edge_sets,
-          node_sets={
-              'op': graph.node_sets['op'],
-              'nconfig': tfgnn.NodeSet.from_fields(
-                  sizes=graph.node_sets['nconfig'].sizes,
-                  features={
-                      'feats': graph.node_sets['nconfig']['feats'][:, i:end_i],
-                  }),
-              'g': tfgnn.NodeSet.from_fields(
-                  sizes=tf.constant([1]),
-                  features={
-                      'graph_id': node_set_g['graph_id'],
-                      'runtimes': node_set_g['runtimes'][:, i:end_i],
-                      'kept_node_ratio': node_set_g['kept_node_ratio'],
-                  })
-          })
-      h = model.forward(subconfigs_graph, num_configs=(end_i - i),
-                        backprop=False)
-      all_scores.append(h[0])
-    all_scores = tf.concat(all_scores, axis=0)
-    graph_id = graph.node_sets['g']['graph_id'][0].numpy().decode()
-    sorted_indices = tf.strings.join(
-        tf.strings.as_string(tf.argsort(all_scores)), ';').numpy().decode()
-    test_rankings.append((graph_id, sorted_indices))
-
-  with tf.io.gfile.GFile(args.results_csv, 'w') as fout:
-    fout.write('ID,TopConfigs\n')
-    for graph_id, ranks in test_rankings:
-      fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
-  print('\n\n   ***  Wrote', args.results_csv, '\n\n')
+  # print('\n\n   Running inference on test set ...\n\n')
+  # test_rankings = []
+  #
+  # for graph in tqdm.tqdm(test_split.iter_graph_tensors(),
+  #                        total=test_split.graph_id.shape[-1],
+  #                        desc='Inference'):
+  #   num_configs = graph.node_sets['g']['runtimes'].shape[-1]
+  #   all_scores = []
+  #   for i in range(0, num_configs, _INFERENCE_CONFIGS_BATCH_SIZE):
+  #     end_i = min(i + _INFERENCE_CONFIGS_BATCH_SIZE, num_configs)
+  #     # Take a cut of the configs.
+  #     node_set_g = graph.node_sets['g']
+  #     subconfigs_graph = tfgnn.GraphTensor.from_pieces(
+  #         edge_sets=graph.edge_sets,
+  #         node_sets={
+  #             'op': graph.node_sets['op'],
+  #             'nconfig': tfgnn.NodeSet.from_fields(
+  #                 sizes=graph.node_sets['nconfig'].sizes,
+  #                 features={
+  #                     'feats': graph.node_sets['nconfig']['feats'][:, i:end_i],
+  #                 }),
+  #             'g': tfgnn.NodeSet.from_fields(
+  #                 sizes=tf.constant([1]),
+  #                 features={
+  #                     'graph_id': node_set_g['graph_id'],
+  #                     'runtimes': node_set_g['runtimes'][:, i:end_i],
+  #                     'kept_node_ratio': node_set_g['kept_node_ratio'],
+  #                 })
+  #         })
+  #     h = model.forward(subconfigs_graph, num_configs=(end_i - i),
+  #                       backprop=False)
+  #     all_scores.append(h[0])
+  #   all_scores = tf.concat(all_scores, axis=0)
+  #   graph_id = graph.node_sets['g']['graph_id'][0].numpy().decode()
+  #   sorted_indices = tf.strings.join(
+  #       tf.strings.as_string(tf.argsort(all_scores)), ';').numpy().decode()
+  #   test_rankings.append((graph_id, sorted_indices))
+  #
+  # with tf.io.gfile.GFile(args.results_csv, 'w') as fout:
+  #   fout.write('ID,TopConfigs\n')
+  #   for graph_id, ranks in test_rankings:
+  #     fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
+  # print('\n\n   ***  Wrote', args.results_csv, '\n\n')
